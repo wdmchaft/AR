@@ -1,0 +1,8 @@
+.DS_Store
+Thumbs.db
+.svn
+build/*
+mitierra.xcodeproj/*
+!mitierra.xcodeproj/project.pbxproj
+old
+help
