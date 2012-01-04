@@ -1,0 +1,102 @@
+
+What is Augmented Reality?
+--------------------------
+
+Augmented Reality (AR) is the integration of digital content over a live view of the world.
+This is usually implemented as a live video feed featuring overimposed computer generated 
+objects so as to appear to actually be in the real world. 
+
+There are two types of AR applications:
+* Based on image recognition: Computer objects are integrated according to cues that result 
+from image recognition. This can be aided by "fiduciary images", which are physical images 
+added to the scene that the application has been previously taught to recognize. The input 
+to the application is a video feed.
+* Based on location: The application adds metadata about the object you are pointing your 
+camera to. The input to the application is the geographical location of the device and the 
+POIs (points of interest, eg: a monument), and the physical orientation of the device. 
+
+In both cases the challenge is to track the orientation of the device, which depends 
+on where the user looks to (eg: north), and how the user holds it in his hand. 
+
+
+Hardware requirements
+---------------------
+
+The minimum device capabilities required to implement AR are:
+* A-GPS to report the geographical location.
+* Compass to report the bearing.
+* Accelerometers to report the 3D orientation of the device (eg: laying flat on the table).
+* A camera able to overlay computer generated objects. 
+
+AR enabled Apple devices are iPhone 3GS, iPhone 4, or iPad 2. 
+
+
+Basic algorithm
+---------------
+
+* Geolocate the user position (from AGPS).
+* Geolocate the POI (point of interest) position (use Google's geocoding API).
+* Calculate the distance between the user and the POI.
+
+> You can calculate the distance along the surface of a sphere (aka "great circle distance") 
+> using the haversine formula. However, the curvature of the earth has little impact on the 
+> distance we are able to walk while looking at our phone, so a simpler alternative is to 
+> pretend that we are using cartesian coordinates and just apply the pythagorean theorem. 
+
+* Calculate the angle from the user to the POI as atan2(dy/dx) where y=latitude, x=longitude.
+* Calculate the offset between the compass bearing and the angle to the POI.
+* Let's say we want to overimpose a marker on the video feed pointing to the POI.
+    * If the offset is 0º (the user is heading directly at the POI) then paint the marker in 
+      the middle of the screen. Otherwise use the offset to move it an amount of pixels equal 
+      to "offset * (screen_width / horizontal_field_vision)".
+* Scale the marker according to the distance, with a minimum and maximum distance.
+
+
+Updating the heading with the gyroscope
+---------------------------------------
+
+The heading comes from the Compass, which is implemented using the Hall effect (a magnetic 
+field perpendicular to an electrical conductor causes a voltage difference). This sensor
+updates slowly, so the marker may take a second to start dragging in the direction we are moving.
+
+To improve the responsiveness to changes in heading we can use the gyroscope. The gyroscope 
+measures angular velocity (rotation rate). So if we are at 90º and we move west at 10º/s during
+9 seconds, we end up at 180º. The gyroscope updates faster than the compass, but it's not 
+completely accurate, so we need to reset the resulting heading periodically using the compass.
+
+
+Device orientation
+------------------
+
+The orientation of the device in the axis X,Y,Z is given by the accelerometer. This sensor is 
+often represented as a ball with two springs attachd per each of the three axis.
+The rotation in one of the axis is the arc tan of the other two, eg: rotation Z = atan2(x,y).
+
+Unfortunately the accelerometer signal has a lot of noise, so it needs to be digitally filtered.
+A popular filter is the low-pass adaptive filter, which you can get from the AccelerometerGraph
+sample project from Apple. This filter makes the signal more resilient to sudden changes, but 
+this has also the effect of making it less responsive.
+
+As with the compass, we can use the gyroscopes to update the signal, and the accelerometer to 
+reset to a good orientation.
+
+
+Pitch
+-----
+
+See http://en.wikipedia.org/wiki/Aircraft_principal_axes if you don't know what pitch is.
+
+When we rotate the device in any direction we are also changing the frame of reference for the
+compass. If we just pitch the device, we just have to add the pitch in degrees to the offset to
+the target to keep the marker correctly oriented.
+
+
+....to be continued
+
+
+
+LICENSE
+-------
+
+The font stan0753.ttf ("standard 07_53") is licensed for personal use only.
+The commercial version is 10$ at http://www.miniml.com/ 
